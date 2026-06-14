@@ -97,10 +97,11 @@ struct ContentView: View {
                     BakeryItemList(items: filteredItems, searchText: searchText)
                         .navigationTitle("Search")
                 }
+                .searchable(text: $searchText, prompt: "Search products or categories")
             }
         }
-        .searchable(text: $searchText, prompt: "Search products or categories")
         .tabViewSearchActivation(.searchTabSelection)
+        .tint(.blue)
     }
 }
 
@@ -197,7 +198,7 @@ private struct BunCountView: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.brown)
+                .tint(.blue)
             }
         }
         .padding()
@@ -209,7 +210,7 @@ private struct BunCountView: View {
 
             Image(systemName: "takeoutbag.and.cup.and.straw")
                 .font(.system(size: 48))
-                .foregroundStyle(.brown)
+                .foregroundStyle(.blue)
 
             Text(product.name)
                 .font(.largeTitle.bold())
@@ -269,11 +270,11 @@ private struct BunCountView: View {
                 Spacer()
                 Text("\(count.wrappedValue)")
                     .font(.title2.monospacedDigit().bold())
-                    .foregroundStyle(.brown)
+                    .foregroundStyle(.blue)
             }
         }
         .padding()
-        .background(.brown.opacity(0.1), in: RoundedRectangle(cornerRadius: 16))
+        .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 16))
     }
 
     private var bunList: some View {
@@ -296,7 +297,7 @@ private struct BunCountView: View {
 
                         Text("\(amountNeeded)")
                             .font(.title3.monospacedDigit().bold())
-                            .foregroundStyle(.brown)
+                            .foregroundStyle(.blue)
                     }
                     .padding(.vertical, 3)
                 }
@@ -334,7 +335,7 @@ private struct ThawProduct: Identifiable {
     let weekdayTarget: Int
     let weekendTarget: Int
     var targetDescription: String?
-    var packDivisor: Int?
+    var trayDivisor: Int?
 
     func target(for dayType: ThawDayType) -> Int {
         dayType == .weekday ? weekdayTarget : weekendTarget
@@ -414,8 +415,8 @@ private struct ThawCountView: View {
             ThawProduct(id: "everything-simply-five", name: "Everything", weekdayTarget: 2, weekendTarget: 2)
         ]),
         ThawGroup(id: "cinnamon", name: "Cinnamon", products: [
-            ThawProduct(id: "cinnamon-rolls", name: "Rolls", weekdayTarget: 12, weekendTarget: 12, targetDescription: "Order in packs of 4", packDivisor: 4),
-            ThawProduct(id: "cinnamon-twists", name: "Twists", weekdayTarget: 12, weekendTarget: 12, targetDescription: "Order in packs of 3", packDivisor: 3)
+            ThawProduct(id: "cinnamon-rolls", name: "Rolls", weekdayTarget: 12, weekendTarget: 12, targetDescription: "Order in trays of 4", trayDivisor: 4),
+            ThawProduct(id: "cinnamon-twists", name: "Twists", weekdayTarget: 12, weekendTarget: 12, targetDescription: "Order in trays of 3", trayDivisor: 3)
         ]),
         ThawGroup(id: "florentine", name: "Florentine", products: [
             ThawProduct(id: "coconut-florentine", name: "Coconut", weekdayTarget: 10, weekendTarget: 10),
@@ -567,9 +568,9 @@ private struct ThawCountView: View {
         let amountNeeded: Int
         let unit: String
 
-        if let divisor = product.packDivisor {
+        if let divisor = product.trayDivisor {
             amountNeeded = (shortfall + divisor - 1) / divisor
-            unit = amountNeeded == 1 ? "pack" : "packs"
+            unit = amountNeeded == 1 ? "tray" : "trays"
         } else {
             amountNeeded = shortfall
             unit = "needed"
@@ -629,9 +630,9 @@ private struct BakeryItemRow: View {
         HStack(spacing: 16) {
             Image(systemName: "birthday.cake")
                 .font(.title2)
-                .foregroundStyle(.brown)
+                .foregroundStyle(.blue)
                 .frame(width: 44, height: 44)
-                .background(.brown.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+                .background(.blue.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
 
             Text(item.name)
                 .font(.headline)
@@ -645,7 +646,7 @@ private struct BakeryItemRow: View {
 
                 Text(item.shelfLife)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.brown)
+                    .foregroundStyle(.blue)
             }
             .fixedSize(horizontal: true, vertical: false)
         }
