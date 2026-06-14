@@ -279,29 +279,8 @@ private struct BunCountView: View {
 
     private var bunList: some View {
         List {
-            Section("Amount Needed") {
-                ForEach(products) { product in
-                    let enteredCount = counts[product.id, default: 0]
-                    let amountNeeded = max(product.targetQuantity - enteredCount, 0)
-
-                    HStack {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(product.name)
-                                .font(.headline)
-                            Text("\(product.targetQuantity) target - \(enteredCount) counted")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Spacer()
-
-                        Text("\(amountNeeded)")
-                            .font(.title3.monospacedDigit().bold())
-                            .foregroundStyle(.blue)
-                    }
-                    .padding(.vertical, 3)
-                }
-            }
+            bunListSection("Buns", products: bunProducts)
+            bunListSection("Bagels", products: bagelProducts)
         }
         .listStyle(.insetGrouped)
         .toolbar {
@@ -317,6 +296,32 @@ private struct BunCountView: View {
                     currentIndex = 0
                     isShowingList = false
                 }
+            }
+        }
+    }
+
+    private func bunListSection(_ title: String, products: [BunProduct]) -> some View {
+        Section(title) {
+            ForEach(products) { product in
+                let enteredCount = counts[product.id, default: 0]
+                let amountNeeded = max(product.targetQuantity - enteredCount, 0)
+
+                HStack {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(product.name)
+                            .font(.headline)
+                        Text("\(product.targetQuantity) target - \(enteredCount) counted")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    Text("\(amountNeeded)")
+                        .font(.title3.monospacedDigit().bold())
+                        .foregroundStyle(.blue)
+                }
+                .padding(.vertical, 3)
             }
         }
     }
@@ -611,12 +616,30 @@ private struct BakeryItemList: View {
     let items: [BakeryItem]
     var searchText = ""
 
+    private var categories: [String] {
+        Set(items.map(\.merchandisingCategory)).sorted {
+            $0.localizedStandardCompare($1) == .orderedAscending
+        }
+    }
+
+    private func items(in category: String) -> [BakeryItem] {
+        items
+            .filter { $0.merchandisingCategory == category }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
     var body: some View {
         if items.isEmpty {
             ContentUnavailableView.search(text: searchText)
         } else {
-            List(items) { item in
-                BakeryItemRow(item: item)
+            List {
+                ForEach(categories, id: \.self) { category in
+                    Section(category) {
+                        ForEach(items(in: category)) { item in
+                            BakeryItemRow(item: item)
+                        }
+                    }
+                }
             }
             .listStyle(.insetGrouped)
         }
