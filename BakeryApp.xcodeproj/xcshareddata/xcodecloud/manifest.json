@@ -1,0 +1,9 @@
+{
+  "id" : "ba424962-4e5a-472e-9e9d-a05435bd81d4",
+  "targets" : [
+    {
+      "id" : "67aeb435-e1ee-4ccd-a8f3-04197ec7ef5f",
+      "name" : "BakeryApp"
+    }
+  ]
+}
