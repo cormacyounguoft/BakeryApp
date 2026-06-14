@@ -15,4 +15,3 @@ struct BakeryAppApp: App {
         }
     }
 }
-
