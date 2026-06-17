@@ -75,9 +75,10 @@ struct ContentView: View {
         TabView {
             Tab("Items", systemImage: "birthday.cake") {
                 NavigationStack {
-                    BakeryItemList(items: bakeryItems)
+                    BakeryItemList(items: filteredItems, searchText: searchText)
                         .navigationTitle("Bakery Shelf Life")
                 }
+                .searchable(text: $searchText, prompt: "Search products or categories")
             }
 
             Tab("Buns", systemImage: "takeoutbag.and.cup.and.straw") {
@@ -92,15 +93,12 @@ struct ContentView: View {
                 }
             }
 
-            Tab(role: .search) {
+            Tab("Skids", systemImage: "shippingbox") {
                 NavigationStack {
-                    BakeryItemList(items: filteredItems, searchText: searchText)
-                        .navigationTitle("Search")
+                    SkidsView()
                 }
-                .searchable(text: $searchText, prompt: "Search products or categories")
             }
         }
-        .tabViewSearchActivation(.searchTabSelection)
         .tint(.blue)
     }
 }
@@ -609,6 +607,471 @@ private struct ThawCountView: View {
             get: { counts[product.id, default: 0] },
             set: { counts[product.id] = $0 }
         )
+    }
+}
+
+private struct SkidItem: Identifiable {
+    let id: String
+    let category: String
+    let name: String
+}
+
+private struct SkidsView: View {
+    private let availableItems = [
+        SkidItem(id: "sweets-mini-strudel-apple", category: "Sweets", name: "Mini Strudel - Apple"),
+        SkidItem(id: "sweets-mini-strudel-raspberry", category: "Sweets", name: "Mini Strudel - Raspberry"),
+        SkidItem(id: "sweets-fruit-stick-apple", category: "Sweets", name: "Fruit Stick - Apple"),
+        SkidItem(id: "sweets-fruit-stick-raspberry", category: "Sweets", name: "Fruit Stick - Raspberry"),
+        SkidItem(id: "sweets-apple-turnover", category: "Sweets", name: "Apple Turnover"),
+        SkidItem(id: "sweets-palm-leaf", category: "Sweets", name: "Palm Leaf"),
+        SkidItem(id: "sweets-maple-pecan", category: "Sweets", name: "Maple Pecan"),
+        SkidItem(id: "sweets-plant-based-strudel-apple", category: "Sweets", name: "Plant Based Strudel - Apple"),
+        SkidItem(id: "sweets-plant-based-strudel-cherry", category: "Sweets", name: "Plant Based Strudel - Cherry"),
+        SkidItem(id: "sweets-custard-tarts-regular", category: "Sweets", name: "Custard Tarts - Regular"),
+        SkidItem(id: "sweets-custard-tarts-hazelnut", category: "Sweets", name: "Custard Tarts - Hazelnut"),
+        SkidItem(id: "sweets-scone-cheddar", category: "Sweets", name: "Scone - Cheddar"),
+        SkidItem(id: "sweets-scone-cranberry", category: "Sweets", name: "Scone - Cranberry"),
+        SkidItem(id: "sweets-scone-raisin", category: "Sweets", name: "Scone - Raisin"),
+        SkidItem(id: "sweets-scone-blueberry", category: "Sweets", name: "Scone - Blueberry"),
+        SkidItem(id: "croissants-all-butter", category: "Croissants", name: "All Butter Croissant"),
+        SkidItem(id: "croissants-breakfast", category: "Croissants", name: "Breakfast Croissant"),
+        SkidItem(id: "croissants-chocolate", category: "Croissants", name: "Chocolate Croissant"),
+        SkidItem(id: "croissants-mini-breakfast", category: "Croissants", name: "Mini Breakfast Croissant"),
+        SkidItem(id: "croissants-mini-cheese", category: "Croissants", name: "Mini Cheese Croissant"),
+        SkidItem(id: "croissants-mini-chocolate", category: "Croissants", name: "Mini Chocolate Croissant"),
+        SkidItem(id: "croissants-pain-au-chocolat", category: "Croissants", name: "Pain au Chocolat"),
+        SkidItem(id: "croissants-plant-based", category: "Croissants", name: "Plant Based Croissant"),
+        SkidItem(id: "thaw-bagels-asiago", category: "Thaw and Serve", name: "7 Bagels - Asiago"),
+        SkidItem(id: "thaw-bagels-everything", category: "Thaw and Serve", name: "7 Bagels - Everything"),
+        SkidItem(id: "thaw-bagels-plain", category: "Thaw and Serve", name: "7 Bagels - Plain"),
+        SkidItem(id: "thaw-bagels-sesame", category: "Thaw and Serve", name: "7 Bagels - Sesame"),
+        SkidItem(id: "thaw-bagels-multigrain", category: "Thaw and Serve", name: "7 Bagels - Multigrain"),
+        SkidItem(id: "thaw-bagels-whole-wheat", category: "Thaw and Serve", name: "7 Bagels - Whole Wheat"),
+        SkidItem(id: "thaw-bagels-cinnamon", category: "Thaw and Serve", name: "7 Bagels - Cinnamon"),
+        SkidItem(id: "thaw-new-buns-golden", category: "Thaw and Serve", name: "New Buns - Golden"),
+        SkidItem(id: "thaw-new-buns-sourdough", category: "Thaw and Serve", name: "New Buns - Sourdough"),
+        SkidItem(id: "thaw-new-buns-brioche", category: "Thaw and Serve", name: "New Buns - Brioche"),
+        SkidItem(id: "thaw-dinner-rolls-milk", category: "Thaw and Serve", name: "Dinner Rolls - Milk"),
+        SkidItem(id: "thaw-dinner-rolls-potato", category: "Thaw and Serve", name: "Dinner Rolls - Potato"),
+        SkidItem(id: "thaw-hamburger", category: "Thaw and Serve", name: "Hamburger"),
+        SkidItem(id: "thaw-hotdog", category: "Thaw and Serve", name: "Hotdog"),
+        SkidItem(id: "thaw-pan-loaf-buttery-sourdough", category: "Thaw and Serve", name: "Pan Loaf - Buttery Sourdough"),
+        SkidItem(id: "thaw-pan-loaf-multigrain", category: "Thaw and Serve", name: "Pan Loaf - Multigrain"),
+        SkidItem(id: "thaw-half-loaf-marble", category: "Thaw and Serve", name: "Half Loaf - Marble"),
+        SkidItem(id: "thaw-half-loaf-sourdough", category: "Thaw and Serve", name: "Half Loaf - Sourdough"),
+        SkidItem(id: "thaw-half-loaf-tuscan", category: "Thaw and Serve", name: "Half Loaf - Tuscan"),
+        SkidItem(id: "thaw-half-loaf-multigrain", category: "Thaw and Serve", name: "Half Loaf - Multigrain"),
+        SkidItem(id: "thaw-mini-muffins-chocolate", category: "Thaw and Serve", name: "Mini Muffins - Chocolate"),
+        SkidItem(id: "thaw-mini-muffins-blueberry", category: "Thaw and Serve", name: "Mini Muffins - Blueberry"),
+        SkidItem(id: "thaw-jumbo-muffins-chocolate", category: "Thaw and Serve", name: "Jumbo Muffins - Chocolate"),
+        SkidItem(id: "thaw-jumbo-muffins-cranberry", category: "Thaw and Serve", name: "Jumbo Muffins - Cranberry"),
+        SkidItem(id: "thaw-jumbo-muffins-mixed-berry", category: "Thaw and Serve", name: "Jumbo Muffins - Mixed Berry"),
+        SkidItem(id: "thaw-jumbo-muffins-double-berry", category: "Thaw and Serve", name: "Jumbo Muffins - Double Berry"),
+        SkidItem(id: "thaw-jumbo-muffins-apple", category: "Thaw and Serve", name: "Jumbo Muffins - Apple"),
+        SkidItem(id: "thaw-butter-tarts-mini", category: "Thaw and Serve", name: "Butter Tarts - Mini"),
+        SkidItem(id: "thaw-butter-tarts-classic", category: "Thaw and Serve", name: "Butter Tarts - Classic"),
+        SkidItem(id: "thaw-butter-tarts-pecan", category: "Thaw and Serve", name: "Butter Tarts - Pecan"),
+        SkidItem(id: "thaw-butter-tarts-raisin", category: "Thaw and Serve", name: "Butter Tarts - Raisin"),
+        SkidItem(id: "thaw-butter-tarts-maple", category: "Thaw and Serve", name: "Butter Tarts - Maple"),
+        SkidItem(id: "thaw-swiss-rolls-chocolate", category: "Thaw and Serve", name: "Swiss Rolls - Chocolate"),
+        SkidItem(id: "thaw-swiss-rolls-strawberry", category: "Thaw and Serve", name: "Swiss Rolls - Strawberry"),
+        SkidItem(id: "thaw-swiss-rolls-black-forest", category: "Thaw and Serve", name: "Swiss Rolls - Black Forest"),
+        SkidItem(id: "thaw-swiss-rolls-maple", category: "Thaw and Serve", name: "Swiss Rolls - Maple"),
+        SkidItem(id: "thaw-simply-five-garlic", category: "Thaw and Serve", name: "Simply Five - Garlic"),
+        SkidItem(id: "thaw-simply-five-mozzarella", category: "Thaw and Serve", name: "Simply Five - Mozzarella"),
+        SkidItem(id: "thaw-simply-five-basil", category: "Thaw and Serve", name: "Simply Five - Basil"),
+        SkidItem(id: "thaw-simply-five-white", category: "Thaw and Serve", name: "Simply Five - White"),
+        SkidItem(id: "thaw-simply-five-whole-wheat", category: "Thaw and Serve", name: "Simply Five - Whole Wheat"),
+        SkidItem(id: "thaw-simply-five-everything", category: "Thaw and Serve", name: "Simply Five - Everything"),
+        SkidItem(id: "thaw-cinnamon-rolls", category: "Thaw and Serve", name: "Cinnamon Rolls"),
+        SkidItem(id: "thaw-cinnamon-twist", category: "Thaw and Serve", name: "Cinnamon Twist"),
+        SkidItem(id: "thaw-florentine-coconut", category: "Thaw and Serve", name: "Florentine - Coconut"),
+        SkidItem(id: "thaw-florentine-hazelnut", category: "Thaw and Serve", name: "Florentine - Hazelnut"),
+        SkidItem(id: "upstairs-garlic-bread", category: "Upstairs Thaw and Serve", name: "Garlic Bread"),
+        SkidItem(id: "upstairs-gluten-free-tarts", category: "Upstairs Thaw and Serve", name: "Gluten Free Tarts"),
+        SkidItem(id: "upstairs-vegan-cupcakes-lemon", category: "Upstairs Thaw and Serve", name: "Vegan Cupcakes - Lemon"),
+        SkidItem(id: "upstairs-vegan-cupcakes-carrot", category: "Upstairs Thaw and Serve", name: "Vegan Cupcakes - Carrot"),
+        SkidItem(id: "upstairs-vegan-cupcakes-berry", category: "Upstairs Thaw and Serve", name: "Vegan Cupcakes - Berry"),
+        SkidItem(id: "upstairs-vegan-cupcakes-chocolate", category: "Upstairs Thaw and Serve", name: "Vegan Cupcakes - Chocolate"),
+        SkidItem(id: "upstairs-vegan-muffins-cranberry", category: "Upstairs Thaw and Serve", name: "Vegan Muffins - Cranberry"),
+        SkidItem(id: "upstairs-vegan-muffins-blueberry", category: "Upstairs Thaw and Serve", name: "Vegan Muffins - Blueberry"),
+        SkidItem(id: "upstairs-vegan-muffins-double-chocolate", category: "Upstairs Thaw and Serve", name: "Vegan Muffins - Double Chocolate"),
+        SkidItem(id: "upstairs-vegan-muffins-chocolate-chip", category: "Upstairs Thaw and Serve", name: "Vegan Muffins - Chocolate Chip"),
+        SkidItem(id: "upstairs-mini-donuts-red-berry", category: "Upstairs Thaw and Serve", name: "Mini Donuts - Red Berry"),
+        SkidItem(id: "upstairs-mini-donuts-chocolate-hazelnut", category: "Upstairs Thaw and Serve", name: "Mini Donuts - Chocolate Hazelnut"),
+        SkidItem(id: "upstairs-fb-donuts-cinnamon", category: "Upstairs Thaw and Serve", name: "FB Donuts - Cinnamon"),
+        SkidItem(id: "upstairs-fb-donuts-caramel", category: "Upstairs Thaw and Serve", name: "FB Donuts - Caramel"),
+        SkidItem(id: "upstairs-fb-donuts-celebration", category: "Upstairs Thaw and Serve", name: "FB Donuts - Celebration"),
+        SkidItem(id: "upstairs-coffee-cake-cinnamon", category: "Upstairs Thaw and Serve", name: "Coffee Cake - Cinnamon"),
+        SkidItem(id: "upstairs-coffee-cake-wild-berry", category: "Upstairs Thaw and Serve", name: "Coffee Cake - Wild Berry"),
+        SkidItem(id: "upstairs-coffee-cake-chocolate", category: "Upstairs Thaw and Serve", name: "Coffee Cake - Chocolate"),
+        SkidItem(id: "buns-portuguese-buns", category: "Buns", name: "Portuguese Buns"),
+        SkidItem(id: "buns-rustic-italian", category: "Buns", name: "Rustic Italian"),
+        SkidItem(id: "buns-portuguese-sweet", category: "Buns", name: "Portuguese Sweet"),
+        SkidItem(id: "buns-croissant-bun", category: "Buns", name: "Croissant Bun"),
+        SkidItem(id: "buns-pretzel-buns", category: "Buns", name: "Pretzel Buns"),
+        SkidItem(id: "buns-pretzel-twist", category: "Buns", name: "Pretzel Twist"),
+        SkidItem(id: "buns-cheese-bun", category: "Buns", name: "Cheese Bun"),
+        SkidItem(id: "buns-cheese-stick", category: "Buns", name: "Cheese Stick"),
+        SkidItem(id: "buns-bagels-everything", category: "Buns", name: "6 Bagels - Everything"),
+        SkidItem(id: "buns-bagels-plain", category: "Buns", name: "6 Bagels - Plain"),
+        SkidItem(id: "buns-bagels-sesame", category: "Buns", name: "6 Bagels - Sesame"),
+        SkidItem(id: "buns-bagels-cheese", category: "Buns", name: "6 Bagels - Cheese"),
+        SkidItem(id: "buns-bagels-jalapeno", category: "Buns", name: "6 Bagels - Jalapeno"),
+        SkidItem(id: "buns-bagels-cinnamon", category: "Buns", name: "6 Bagels - Cinnamon"),
+        SkidItem(id: "pies-8-apple", category: "Pies", name: "8\" Pie - Apple"),
+        SkidItem(id: "pies-8-strawberry-rhubarb", category: "Pies", name: "8\" Pie - Strawberry Rhubarb"),
+        SkidItem(id: "pies-8-saskatoon-berry", category: "Pies", name: "8\" Pie - Saskatoon Berry"),
+        SkidItem(id: "pies-8-cherry", category: "Pies", name: "8\" Pie - Cherry"),
+        SkidItem(id: "pies-8-blueberry", category: "Pies", name: "8\" Pie - Blueberry"),
+        SkidItem(id: "pies-8-pumpkin", category: "Pies", name: "8\" Pie - Pumpkin"),
+        SkidItem(id: "pies-8-pecan", category: "Pies", name: "8\" Pie - Pecan"),
+        SkidItem(id: "pies-8-lemon-crunch", category: "Pies", name: "8\" Pie - Lemon Crunch"),
+        SkidItem(id: "pies-8-lemon-meringue", category: "Pies", name: "8\" Pie - Lemon Meringue"),
+        SkidItem(id: "pies-8-no-sugar-apple", category: "Pies", name: "8\" Pie - No Sugar Apple"),
+        SkidItem(id: "pies-8-no-sugar-blueberry", category: "Pies", name: "8\" Pie - No Sugar Blueberry"),
+        SkidItem(id: "pies-9-apple", category: "Pies", name: "9\" Pie - Apple"),
+        SkidItem(id: "pies-9-cherry", category: "Pies", name: "9\" Pie - Cherry"),
+        SkidItem(id: "pies-9-peach", category: "Pies", name: "9\" Pie - Peach"),
+        SkidItem(id: "cake-mousse-raspberry", category: "Cake", name: "Mousse Cake - Raspberry"),
+        SkidItem(id: "cake-mousse-hazelnut", category: "Cake", name: "Mousse Cake - Hazelnut"),
+        SkidItem(id: "cake-mousse-chocolate", category: "Cake", name: "Mousse Cake - Chocolate"),
+        SkidItem(id: "cake-mini-tiramisu", category: "Cake", name: "Mini Cake - Tiramisu"),
+        SkidItem(id: "cake-mini-apple", category: "Cake", name: "Mini Cake - Apple"),
+        SkidItem(id: "cake-mini-raspberry", category: "Cake", name: "Mini Cake - Raspberry"),
+        SkidItem(id: "cake-mini-chocolate", category: "Cake", name: "Mini Cake - Chocolate"),
+        SkidItem(id: "cake-butter-tarts-chocolate", category: "Cake", name: "Butter Tarts - Chocolate"),
+        SkidItem(id: "cake-butter-tarts-pecan", category: "Cake", name: "Butter Tarts - Pecan"),
+        SkidItem(id: "cake-butter-tarts-classic", category: "Cake", name: "Butter Tarts - Classic"),
+        SkidItem(id: "cake-mini-cheesecake-pecan", category: "Cake", name: "Mini Cheesecake - Pecan"),
+        SkidItem(id: "cake-mini-cheesecake-lemon", category: "Cake", name: "Mini Cheesecake - Lemon"),
+        SkidItem(id: "cake-6-lemon", category: "Cake", name: "6\" Cake - Lemon"),
+        SkidItem(id: "cake-6-red-velvet", category: "Cake", name: "6\" Cake - Red Velvet"),
+        SkidItem(id: "cake-6-brownie-chocolate-cheesecake", category: "Cake", name: "6\" Cake - Brownie Chocolate Cheesecake"),
+        SkidItem(id: "cake-6-strawberry-dream", category: "Cake", name: "6\" Cake - Strawberry Dream"),
+        SkidItem(id: "cake-6-chocolate-truffle", category: "Cake", name: "6\" Cake - Chocolate Truffle"),
+        SkidItem(id: "cake-6-chocolate-fudge", category: "Cake", name: "6\" Cake - Chocolate Fudge"),
+        SkidItem(id: "cake-8-chocolate-truffle-trio", category: "Cake", name: "8\" Cake - Chocolate Truffle Trio"),
+        SkidItem(id: "cake-8-mocha-almond-fudge", category: "Cake", name: "8\" Cake - Mocha Almond Fudge"),
+        SkidItem(id: "cake-8-tiramisu", category: "Cake", name: "8\" Cake - Tiramisu"),
+        SkidItem(id: "cake-8-red-velvet", category: "Cake", name: "8\" Cake - Red Velvet"),
+        SkidItem(id: "cake-8-black-forest", category: "Cake", name: "8\" Cake - Black Forest"),
+        SkidItem(id: "cake-8-le-rocher", category: "Cake", name: "8\" Cake - Le Rocher"),
+        SkidItem(id: "cake-8-caramel-butter-pecan", category: "Cake", name: "8\" Cake - Caramel Butter Pecan"),
+        SkidItem(id: "cake-8-chocolate-birthday", category: "Cake", name: "8\" Cake - Chocolate Birthday"),
+        SkidItem(id: "cake-8-vanilla-birthday", category: "Cake", name: "8\" Cake - Vanilla Birthday"),
+        SkidItem(id: "cake-8-key-lime", category: "Cake", name: "8\" Cake - Key Lime"),
+        SkidItem(id: "cake-bar-strawberry", category: "Cake", name: "Bar Cake - Strawberry"),
+        SkidItem(id: "cake-bar-carrot", category: "Cake", name: "Bar Cake - Carrot"),
+        SkidItem(id: "cake-bar-tiramisu", category: "Cake", name: "Bar Cake - Tiramisu"),
+        SkidItem(id: "cake-bar-smores", category: "Cake", name: "Bar Cake - S'mores"),
+        SkidItem(id: "cake-bar-tuxedo", category: "Cake", name: "Bar Cake - Tuxedo"),
+        SkidItem(id: "macarons-vanilla", category: "Macarons", name: "Vanilla Macaron"),
+        SkidItem(id: "macarons-caramel", category: "Macarons", name: "Caramel Macaron"),
+        SkidItem(id: "macarons-bubblegum", category: "Macarons", name: "Bubblegum Macaron"),
+        SkidItem(id: "macarons-lemon", category: "Macarons", name: "Lemon Macaron"),
+        SkidItem(id: "macarons-chocolate", category: "Macarons", name: "Chocolate Macaron"),
+        SkidItem(id: "macarons-strawberry", category: "Macarons", name: "Strawberry Macaron"),
+        SkidItem(id: "macarons-tiramisu", category: "Macarons", name: "Tiramisu Macaron"),
+        SkidItem(id: "macarons-red-velvet", category: "Macarons", name: "Red Velvet Macaron"),
+        SkidItem(id: "macarons-birthday-cake", category: "Macarons", name: "Birthday Cake Macaron"),
+        SkidItem(id: "macarons-pistachio", category: "Macarons", name: "Pistachio Macaron"),
+        SkidItem(id: "macarons-candy-cane", category: "Macarons", name: "Candy Cane Macaron"),
+        SkidItem(id: "cookies-chocolate-chunk", category: "Cookies", name: "Chocolate Chunk Cookie"),
+        SkidItem(id: "cookies-caramel-chocolate-chunk", category: "Cookies", name: "Caramel Chocolate Chunk Cookie"),
+        SkidItem(id: "cookies-oatmeal-chocolate", category: "Cookies", name: "Oatmeal Chocolate Cookie"),
+        SkidItem(id: "cookies-white-macadamia", category: "Cookies", name: "White Macadamia Cookie"),
+        SkidItem(id: "cookies-peanut-butter", category: "Cookies", name: "Peanut Butter Cookie"),
+        SkidItem(id: "cookies-ginger-molasses", category: "Cookies", name: "Ginger Molasses Cookie"),
+        SkidItem(id: "cookies-monster", category: "Cookies", name: "Monster Cookie"),
+        SkidItem(id: "cookies-plant-based-chocolate-chip", category: "Cookies", name: "Plant Based Chocolate Chip Cookie"),
+        SkidItem(id: "cookies-plant-based-oatmeal-raisin", category: "Cookies", name: "Plant Based Oatmeal Raisin Cookie"),
+        SkidItem(id: "bread-art-is-in-frank", category: "Bread", name: "Art-is-in - Frank"),
+        SkidItem(id: "bread-art-is-in-whole-wheat-sourdough", category: "Bread", name: "Art-is-in - Whole Wheat Sourdough"),
+        SkidItem(id: "bread-dynamic-kalamata-olive", category: "Bread", name: "Dynamic - Kalamata Olive"),
+        SkidItem(id: "bread-dynamic-cheddar-cheese", category: "Bread", name: "Dynamic - Cheddar Cheese"),
+        SkidItem(id: "bread-dynamic-rosemary", category: "Bread", name: "Dynamic - Rosemary"),
+        SkidItem(id: "bread-three-cheese-loaf", category: "Bread", name: "Three Cheese Loaf"),
+        SkidItem(id: "bread-baguette", category: "Bread", name: "Baguette"),
+        SkidItem(id: "bread-sourdough-baguette", category: "Bread", name: "Sourdough Baguette"),
+        SkidItem(id: "bread-belgian", category: "Bread", name: "Belgian"),
+        SkidItem(id: "bread-country-round", category: "Bread", name: "Country Round"),
+        SkidItem(id: "bread-cranberry-pumpkin-seed", category: "Bread", name: "Cranberry Pumpkin Seed"),
+        SkidItem(id: "bread-multigrain-belgian", category: "Bread", name: "Multigrain Belgian"),
+        SkidItem(id: "bread-organic-sourdough-boule", category: "Bread", name: "Organic Sourdough Boule"),
+        SkidItem(id: "bread-organic-sprout", category: "Bread", name: "Organic Sprout"),
+        SkidItem(id: "bread-pane-di-como-italian-loaf", category: "Bread", name: "Pane di Como Italian Loaf"),
+        SkidItem(id: "bread-parisian", category: "Bread", name: "Parisian"),
+        SkidItem(id: "bread-pumpernickel", category: "Bread", name: "Pumpernickel"),
+        SkidItem(id: "bread-rosemary-olive-oil", category: "Bread", name: "Rosemary Olive Oil"),
+        SkidItem(id: "bread-sourdough-batard", category: "Bread", name: "Sourdough Batard"),
+        SkidItem(id: "bread-multigrain-sourdough-batard", category: "Bread", name: "Multigrain Sourdough Batard"),
+        SkidItem(id: "bread-mini-sourdough", category: "Bread", name: "Mini Sourdough"),
+        SkidItem(id: "bread-organic-white", category: "Bread", name: "Organic White"),
+        SkidItem(id: "bread-calabrese-long", category: "Bread", name: "Calabrese Long"),
+        SkidItem(id: "bread-calabrese-round", category: "Bread", name: "Calabrese Round")
+    ]
+
+    @State private var receivedItems: [String: Int] = [:]
+    @State private var searchText = ""
+    @State private var summarySearchText = ""
+    @State private var customItemName = ""
+    @State private var customQuantity = 1
+    @State private var isShowingSummary = false
+
+    private let categoryOrder = [
+        "Sweets",
+        "Croissants",
+        "Thaw and Serve",
+        "Upstairs Thaw and Serve",
+        "Buns",
+        "Pies",
+        "Cake",
+        "Macarons",
+        "Cookies",
+        "Bread",
+        "Custom"
+    ]
+
+    private var filteredAvailableItems: [SkidItem] {
+        guard !searchText.isEmpty else {
+            return availableItems
+        }
+
+        return availableItems.filter { item in
+            item.name.localizedCaseInsensitiveContains(searchText)
+                || item.category.localizedCaseInsensitiveContains(searchText)
+        }
+    }
+
+    private var availableCategories: [String] {
+        categoryOrder.filter { category in
+            filteredAvailableItems.contains { $0.category == category }
+        }
+    }
+
+    private var receivedItemNames: [String] {
+        receivedItems.keys.sorted {
+            $0.localizedStandardCompare($1) == .orderedAscending
+        }
+    }
+
+    private var receivedCategories: [String] {
+        categoryOrder.filter { category in
+            !receivedItemNames(in: category).isEmpty
+        }
+    }
+
+    private var filteredReceivedCategories: [String] {
+        categoryOrder.filter { category in
+            !receivedItemNames(in: category, from: filteredReceivedItemNames).isEmpty
+        }
+    }
+
+    private var filteredReceivedItemNames: [String] {
+        guard !summarySearchText.isEmpty else {
+            return receivedItemNames
+        }
+
+        return receivedItemNames.filter {
+            $0.localizedCaseInsensitiveContains(summarySearchText)
+        }
+    }
+
+    private var trimmedCustomItemName: String {
+        customItemName.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var body: some View {
+        Group {
+            if isShowingSummary {
+                summaryList
+            } else {
+                entryList
+            }
+        }
+        .navigationTitle(isShowingSummary ? "Skid List" : "Skids")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(isShowingSummary ? "Edit" : "Finish") {
+                    isShowingSummary.toggle()
+                }
+                .disabled(receivedItems.isEmpty)
+            }
+
+            if !receivedItems.isEmpty {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Reset", role: .destructive) {
+                        receivedItems.removeAll()
+                        searchText = ""
+                        summarySearchText = ""
+                        customItemName = ""
+                        customQuantity = 1
+                        isShowingSummary = false
+                    }
+                }
+            }
+        }
+    }
+
+    private var entryList: some View {
+        List {
+            if !receivedItems.isEmpty {
+                ForEach(receivedCategories, id: \.self) { category in
+                    let itemNames = receivedItemNames(in: category)
+
+                    Section("Current Skid - \(category)") {
+                        ForEach(itemNames, id: \.self) { itemName in
+                            receivedItemRow(itemName: itemName)
+                        }
+                        .onDelete { offsets in
+                            deleteReceivedItems(at: offsets, from: itemNames)
+                        }
+                    }
+                }
+            }
+
+            ForEach(availableCategories, id: \.self) { category in
+                Section(category) {
+                    ForEach(items(in: category)) { item in
+                        Button {
+                            addReceivedItem(named: item.name)
+                        } label: {
+                            skidItemPickerRow(item)
+                        }
+                    }
+                }
+            }
+
+            Section("Add Custom Item") {
+                TextField("Item name", text: $customItemName)
+                    .textInputAutocapitalization(.words)
+
+                Stepper(value: $customQuantity, in: 1...999) {
+                    HStack {
+                        Text("Quantity")
+                        Spacer()
+                        Text("\(customQuantity)")
+                            .font(.headline.monospacedDigit())
+                            .foregroundStyle(.blue)
+                    }
+                }
+
+                Button {
+                    addReceivedItem(named: trimmedCustomItemName, quantity: customQuantity)
+                    customItemName = ""
+                    customQuantity = 1
+                } label: {
+                    Label("Add Item", systemImage: "plus.circle.fill")
+                }
+                .disabled(trimmedCustomItemName.isEmpty)
+            }
+        }
+        .listStyle(.insetGrouped)
+        .searchable(text: $searchText, prompt: "Search skid items")
+    }
+
+    private var summaryList: some View {
+        List {
+            ForEach(filteredReceivedCategories, id: \.self) { category in
+                Section(category) {
+                    ForEach(receivedItemNames(in: category, from: filteredReceivedItemNames), id: \.self) { itemName in
+                        receivedItemRow(itemName: itemName)
+                    }
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+        .searchable(text: $summarySearchText, prompt: "Search received items")
+    }
+
+    private func items(in category: String) -> [SkidItem] {
+        filteredAvailableItems.filter { $0.category == category }
+    }
+
+    private func receivedItemNames(in category: String, from itemNames: [String]? = nil) -> [String] {
+        let names = itemNames ?? receivedItemNames
+
+        return names.filter {
+            categoryName(for: $0) == category
+        }
+    }
+
+    private func categoryName(for itemName: String) -> String {
+        availableItems.first { $0.name == itemName }?.category ?? "Custom"
+    }
+
+    private func skidItemPickerRow(_ item: SkidItem) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "shippingbox")
+                .font(.title3)
+                .foregroundStyle(.blue)
+                .frame(width: 36, height: 36)
+                .background(.blue.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(item.name)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+            }
+
+            Spacer()
+
+            let count = receivedItems[item.name, default: 0]
+            if count > 0 {
+                Text("\(count)")
+                    .font(.headline.monospacedDigit())
+                    .foregroundStyle(.blue)
+            }
+
+            Image(systemName: "plus.circle.fill")
+                .foregroundStyle(.blue)
+        }
+    }
+
+    private func receivedItemRow(itemName: String) -> some View {
+        HStack {
+            Text(itemName)
+                .font(.headline)
+
+            Spacer()
+
+            Button {
+                decrementReceivedItem(named: itemName)
+            } label: {
+                Image(systemName: "minus.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(.red)
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel("Remove one \(itemName)")
+
+            Text("\(receivedItems[itemName, default: 0])")
+                .font(.title3.monospacedDigit().bold())
+                .foregroundStyle(.blue)
+                .frame(minWidth: 32, alignment: .trailing)
+        }
+        .padding(.vertical, 3)
+    }
+
+    private func addReceivedItem(named itemName: String, quantity: Int = 1) {
+        receivedItems[itemName, default: 0] += quantity
+    }
+
+    private func decrementReceivedItem(named itemName: String) {
+        let newCount = receivedItems[itemName, default: 0] - 1
+
+        if newCount > 0 {
+            receivedItems[itemName] = newCount
+        } else {
+            receivedItems.removeValue(forKey: itemName)
+        }
+    }
+
+    private func deleteReceivedItems(at offsets: IndexSet, from itemNames: [String]) {
+        for offset in offsets {
+            receivedItems.removeValue(forKey: itemNames[offset])
+        }
     }
 }
 
