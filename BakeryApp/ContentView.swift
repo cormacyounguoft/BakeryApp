@@ -36,7 +36,7 @@ struct ContentView: View {
         BakeryItem(merchandisingCategory: "Cakes", name: "Angel & Mini Angel Cakes", shelfLife: "10 days"),
         BakeryItem(merchandisingCategory: "Pie", name: "8\" No Sugar Added", shelfLife: "6 days"),
         BakeryItem(merchandisingCategory: "Pie", name: "Bakerberry’s Pie Ontario Apple", shelfLife: "5 days"),
-        BakeryItem(merchandisingCategory: "Pie", name: "Farm Boy 8\" Pies", shelfLife: "6 days"),
+        BakeryItem(merchandisingCategory: "Pie", name: "Farm Boy 8\" Pie (Small)", shelfLife: "6 days"),
         BakeryItem(merchandisingCategory: "PL Thaw and Serve", name: "Farm Boy Swiss Rolls", shelfLife: "21 days"),
         BakeryItem(merchandisingCategory: "PL Thaw and Serve", name: "Farm Boy Butter Tarts", shelfLife: "14 days"),
         BakeryItem(merchandisingCategory: "PL Thaw and Serve", name: "Farm Boy Coffee Cakes", shelfLife: "10 days"),
@@ -48,8 +48,7 @@ struct ContentView: View {
         BakeryItem(merchandisingCategory: "Sweets", name: "Farm Boy Plant-Based Strudels (6 pk)", shelfLife: "5 days"),
         BakeryItem(merchandisingCategory: "Sweets", name: "Farm Boy Scones (4 pk)", shelfLife: "4 days"),
         BakeryItem(merchandisingCategory: "Sweets", name: "Sticky Toffee", shelfLife: "5 days"),
-        BakeryItem(merchandisingCategory: "Pie", name: "Small Pie", shelfLife: "6 days"),
-        BakeryItem(merchandisingCategory: "Pie", name: "Big Pie", shelfLife: "7 days"),
+        BakeryItem(merchandisingCategory: "Pie", name: "Farm Boy 9\" Pie (Big)", shelfLife: "7 days"),
         BakeryItem(merchandisingCategory: "Pie", name: "Lemon Meringue", shelfLife: "7 days"),
         BakeryItem(merchandisingCategory: "Dietary", name: "Gluten Free Tarts", shelfLife: "14 days"),
         BakeryItem(merchandisingCategory: "Cakes", name: "Loaf Cakes", shelfLife: "14 days"),
@@ -61,13 +60,25 @@ struct ContentView: View {
     ]
 
     private var filteredItems: [BakeryItem] {
-        guard !searchText.isEmpty else {
-            return bakeryItems
+        let matchingItems: [BakeryItem]
+
+        if searchText.isEmpty {
+            matchingItems = bakeryItems
+        } else {
+            matchingItems = bakeryItems.filter { item in
+                item.name.localizedCaseInsensitiveContains(searchText)
+                    || item.merchandisingCategory.localizedCaseInsensitiveContains(searchText)
+            }
         }
 
-        return bakeryItems.filter { item in
-            item.name.localizedCaseInsensitiveContains(searchText)
-                || item.merchandisingCategory.localizedCaseInsensitiveContains(searchText)
+        return matchingItems.sorted {
+            let categoryComparison = $0.merchandisingCategory.localizedStandardCompare($1.merchandisingCategory)
+
+            if categoryComparison == .orderedSame {
+                return $0.name.localizedStandardCompare($1.name) == .orderedAscending
+            }
+
+            return categoryComparison == .orderedAscending
         }
     }
 
@@ -820,27 +831,33 @@ private struct SkidsView: View {
     @State private var isShowingSummary = false
 
     private let categoryOrder = [
-        "Sweets",
-        "Croissants",
-        "Thaw and Serve",
-        "Upstairs Thaw and Serve",
-        "Buns",
-        "Pies",
-        "Cake",
-        "Macarons",
-        "Cookies",
         "Bread",
-        "Custom"
+        "Buns",
+        "Cake",
+        "Cookies",
+        "Croissants",
+        "Custom",
+        "Macarons",
+        "Pies",
+        "Sweets",
+        "Thaw and Serve",
+        "Upstairs Thaw and Serve"
     ]
 
     private var filteredAvailableItems: [SkidItem] {
-        guard !searchText.isEmpty else {
-            return availableItems
+        let matchingItems: [SkidItem]
+
+        if searchText.isEmpty {
+            matchingItems = availableItems
+        } else {
+            matchingItems = availableItems.filter { item in
+                item.name.localizedCaseInsensitiveContains(searchText)
+                    || item.category.localizedCaseInsensitiveContains(searchText)
+            }
         }
 
-        return availableItems.filter { item in
-            item.name.localizedCaseInsensitiveContains(searchText)
-                || item.category.localizedCaseInsensitiveContains(searchText)
+        return matchingItems.sorted {
+            $0.name.localizedStandardCompare($1.name) == .orderedAscending
         }
     }
 
@@ -986,7 +1003,9 @@ private struct SkidsView: View {
     }
 
     private func items(in category: String) -> [SkidItem] {
-        filteredAvailableItems.filter { $0.category == category }
+        filteredAvailableItems
+            .filter { $0.category == category }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
     private func receivedItemNames(in category: String, from itemNames: [String]? = nil) -> [String] {
